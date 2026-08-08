@@ -1,0 +1,6 @@
+{
+  "name": "Daily Work Log System",
+  "description": "A comprehensive daily work logging system with real-time time tracking, task tagging, AI standup & summary reports, productivity analytics, and report export tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
