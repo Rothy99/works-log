@@ -1,0 +1,18 @@
+# wrangler.toml
+# Configures the Cloudflare Pages/Worker deployment for Works Log.
+# Populate with your database_id once created.
+
+name = "works-log"
+compatibility_date = "2024-11-01"
+
+[site]
+bucket = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "works-log-db"
+database_id = "INSERT_YOUR_DATABASE_ID_HERE"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "works-log-photos"

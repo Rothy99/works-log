@@ -33,17 +33,26 @@ import {
 } from "./types";
 
 type AppEnv = {
+  Bindings: {
+    DB?: any;
+  };
   Variables: {
-    db: D1Client;
+    db: any;
   };
 };
 
 const app = new Hono<AppEnv>();
 
 const D1_NOT_CONFIGURED =
-  "D1 database is not configured. Set CF_ACCOUNT_ID, CF_API_TOKEN and CF_D1_DATABASE_ID environment variables.";
+  "D1 database is not configured. Bind a native DB to Cloudflare Worker, or set CF_ACCOUNT_ID, CF_API_TOKEN and CF_D1_DATABASE_ID env variables.";
 
 function requireDb(c: Context<AppEnv>, next: () => Promise<void>): Promise<Response> | Promise<void> {
+  const nativeDb = c.env?.DB;
+  if (nativeDb) {
+    c.set("db", nativeDb);
+    return next();
+  }
+
   const db = getD1Client();
   if (!db) {
     return Promise.resolve(c.json({ error: D1_NOT_CONFIGURED }, 503));
@@ -55,7 +64,7 @@ function requireDb(c: Context<AppEnv>, next: () => Promise<void>): Promise<Respo
 // ---------- Service info ----------
 
 app.get("/", (c) => {
-  const db = getD1Client();
+  const db = c.env?.DB || getD1Client();
   return c.json({
     service: "works-log API",
     version: "v1",
@@ -69,7 +78,7 @@ app.get("/", (c) => {
 });
 
 app.post("/seed", async (c) => {
-  const db = getD1Client();
+  const db = c.env?.DB || getD1Client();
   if (!db) {
     return c.json({ error: D1_NOT_CONFIGURED }, 503);
   }
@@ -78,7 +87,7 @@ app.post("/seed", async (c) => {
 });
 
 app.post("/reset", async (c) => {
-  const db = getD1Client();
+  const db = c.env?.DB || getD1Client();
   if (!db) {
     return c.json({ error: D1_NOT_CONFIGURED }, 503);
   }
