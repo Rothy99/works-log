@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+const randomUUID = () => globalThis.crypto.randomUUID();
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { D1Client, getD1Client } from "./d1";

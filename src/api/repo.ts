@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+const randomUUID = () => globalThis.crypto.randomUUID();
 import type { D1Client } from "./d1";
 import {
   Customer,
