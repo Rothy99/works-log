@@ -3,7 +3,6 @@ import {
   Clock, 
   ListTodo, 
   Users,
-  Plus, 
   X,
   UserCheck,
   ChevronRight,
@@ -13,11 +12,6 @@ import { useLanguage } from '../context/LanguageContext';
 interface SidebarProps {
   activeTab: 'daily_work' | 'customers';
   setActiveTab: (tab: 'daily_work' | 'customers') => void;
-  onOpenNewLog: () => void;
-  onOpenStandup: () => void;
-  onOpenWeeklySummary: () => void;
-  onOpenExport: () => void;
-  onOpenProjectMgr: () => void;
   isOpenMobile: boolean;
   setIsOpenMobile: (open: boolean) => void;
 }
@@ -25,7 +19,6 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
-  onOpenNewLog,
   isOpenMobile,
   setIsOpenMobile,
 }) => {
@@ -51,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header */}
       <div className="p-5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
             <Clock className="w-5 h-5" />
           </div>
           <div>
@@ -68,30 +61,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Mobile close button */}
         <button
           onClick={() => setIsOpenMobile(false)}
-          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-650 hover:bg-slate-100"
         >
           <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Primary Action Button */}
-      <div className="p-4">
-        <button
-          onClick={() => {
-            onOpenNewLog();
-            setIsOpenMobile(false);
-          }}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm shadow-blue-600/20 active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>{t('newLogEntry')}</span>
         </button>
       </div>
 
       {/* Main Navigation Links */}
       <div className="flex-1 px-3 py-2 space-y-6 overflow-y-auto">
         <div>
-          <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+          <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-450 mb-2">
             {t('mainMenu')}
           </p>
           <nav className="space-y-1">
@@ -105,14 +84,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     setActiveTab(item.id);
                     setIsOpenMobile(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-blue-50 border-blue-200/60 text-blue-600 shadow-xs'
+                      : 'text-slate-650 border-transparent hover:bg-slate-50 hover:text-slate-905'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-450'}`} />
                     <div className="text-left">
                       <div className="leading-tight">{item.label}</div>
                     </div>
@@ -128,12 +107,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer Profile Badge */}
       <div className="p-4 border-t border-slate-100 bg-slate-50/50">
         <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs border border-slate-300">
+          <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs border border-slate-300 shadow-inner">
             <UserCheck className="w-4 h-4 text-slate-600" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-slate-900 truncate">{t('userRole')}</p>
-            <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+            <p className="text-[10px] text-emerald-650 font-medium flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
               {t('activeWorkspace')}
             </p>
@@ -147,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-64 fixed inset-y-0 left-0 z-30 shadow-xs">
+      <aside className="hidden lg:block w-64 fixed inset-y-0 left-0 z-30 shadow-xs print:hidden">
         {sidebarContent}
       </aside>
 
@@ -155,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isOpenMobile && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-950/20 backdrop-blur-xs transition-opacity"
             onClick={() => setIsOpenMobile(false)}
           />
           <div className="relative flex-1 max-w-xs w-full bg-white shadow-2xl">

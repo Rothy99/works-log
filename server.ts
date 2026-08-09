@@ -2,10 +2,16 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+import { getRequestListener } from "@hono/node-server";
+import { api } from "./src/api/routes";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Mount the Hono API before express.json() so request bodies are not
+  // consumed before the Hono request listener reads them.
+  app.use("/api/v1", getRequestListener(api.fetch));
 
   app.use(express.json({ limit: "10mb" }));
 

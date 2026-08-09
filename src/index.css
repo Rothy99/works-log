@@ -1,12 +1,35 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Plus Jakarta Sans', 'Outfit', 'Noto Sans Khmer', sans-serif;
+  --font-display: 'Outfit', 'Plus Jakarta Sans', 'Noto Sans Khmer', sans-serif;
+}
+
 @layer base {
   html, body {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
+    background-color: #f8fafc; /* slate-50 light background */
+    color: #0f172a; /* slate-900 text */
   }
+}
+
+/* Custom Scrollbar for modern light theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Hide scrollbars for clean horizontal scrolling on mobile */
@@ -24,4 +47,26 @@
 }
 .pt-safe {
   padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* Print Styles */
+@media print {
+  /* Hide non-essential elements */
+  header, nav, aside, .fixed,
+  button, .no-print { display: none !important; }
+
+  /* Reset layout for print */
+  body, html { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+  main { padding: 0 !important; max-width: none !important; margin-left: 0 !important; }
+  .flex-1 { margin-left: 0 !important; }
+
+  /* Table styles */
+  .bg-white { background: #fff !important; }
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td { border: 1px solid #e2e8f0 !important; padding: 6px 8px !important; font-size: 11px !important; }
+  th { background: #f1f5f9 !important; font-weight: 700 !important; }
+  tr { page-break-inside: avoid; }
+
+  /* Card view for print */
+  .rounded-2xl { border-radius: 8px !important; box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
 }

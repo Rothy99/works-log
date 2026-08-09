@@ -1,285 +1,156 @@
 import React, { useState } from 'react';
 import { 
   Search, 
-  Filter, 
   Calendar, 
-  Clock, 
-  CheckCircle2, 
-  AlertOctagon, 
-  PlayCircle, 
-  HelpCircle, 
-  ExternalLink, 
   Edit3, 
-  Copy, 
+  ClipboardCopy, 
+  Check,
   Trash2, 
-  Tag, 
+  Users,
   ChevronDown,
-  Sparkles,
-  ArrowUpRight,
-  Building2
+  ChevronUp,
+  Eye,
+  Download,
+  SlidersHorizontal
 } from 'lucide-react';
-import { Customer, FilterOptions, Project, TaskCategory, TaskStatus, WorkLog } from '../types';
+import { Customer, FilterOptions, WorkLog, TargetStatus } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { translations } from '../i18n/translations';
+import { LogDetailModal } from './LogDetailModal';
+import { CustomerDetailModal } from './CustomerDetailModal';
+import { filterLogs } from '../utils/filterLogs';
 
 interface DailyLogViewProps {
   logs: WorkLog[];
-  projects: Project[];
   customers?: Customer[];
   filters: FilterOptions;
   setFilters: React.Dispatch<React.SetStateAction<FilterOptions>>;
   onEditLog: (log: WorkLog) => void;
-  onDuplicateLog: (log: WorkLog) => void;
   onDeleteLog: (id: string) => void;
-  onUpdateStatus: (id: string, status: TaskStatus) => void;
   onOpenNewLog: () => void;
+  onExport: () => void;
 }
+
+type TKey = keyof typeof translations.km;
+
+const STATUS_KEYS: Record<TargetStatus, 'meet' | 'sell' | 'interesting' | 'notMeet'> = {
+  meet: 'meet',
+  sell: 'sell',
+  interesting: 'interesting',
+  not_meet: 'notMeet',
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  meet: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+  sell: 'bg-blue-50 text-blue-700 border-blue-200/60',
+  interesting: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  not_meet: 'bg-slate-105 text-slate-600 border-slate-200/80',
+};
+
+const PRESET_KEYS: Record<string, TKey> = {
+  all: 'all',
+  today: 'today',
+  yesterday: 'yesterday',
+  this_week: 'thisWeek',
+  last_week: 'lastWeek',
+};
 
 export const DailyLogView: React.FC<DailyLogViewProps> = ({
   logs,
-  projects,
   customers = [],
   filters,
   setFilters,
   onEditLog,
-  onDuplicateLog,
   onDeleteLog,
-  onUpdateStatus,
   onOpenNewLog,
+  onExport,
 }) => {
   const { t } = useLanguage();
-  const [expandedLogIds, setExpandedLogIds] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedLog, setSelectedLog] = useState<WorkLog | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isLogDetailOpen, setIsLogDetailOpen] = useState(false);
+  const [isCustomerDetailOpen, setIsCustomerDetailOpen] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false); // Collapsed by default
 
-  const toggleExpand = (id: string) => {
-    setExpandedLogIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleCopyLog = (log: WorkLog) => {
+    const [y, m, d] = log.date.split('-');
+    const dateStr = `${d}/${m}/${y}`;
+    const customerNames = log.targets.map((target, i) => {
+      const c = getCustomer(target.customerId);
+      return `${i + 1}/. ${c ? c.name : target.customerId}`;
+    });
+    const text = `${dateStr}\n${log.title}\ncustomer:\n${customerNames.length > 0 ? customerNames.join('\n') : '1/. '}${log.desc ? `\n\n${log.desc}` : ''}`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(log.id);
+      setTimeout(() => setCopiedId(null), 1500);
+    });
   };
 
-  const getProject = (projectId: string) => {
-    return projects.find((p) => p.id === projectId) || {
-      id: 'default',
-      name: 'General',
-      code: 'GEN',
-      color: '#3b82f6',
-    };
+  const handleViewLogDetail = (log: WorkLog) => {
+    setSelectedLog(log);
+    setIsLogDetailOpen(true);
   };
 
-  // Helper formatting minutes
-  const formatDuration = (mins: number) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h === 0) return `${m}m`;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}m`;
+  const handleCustomerClick = (customer: Customer) => {
+    setIsLogDetailOpen(false);
+    setSelectedCustomer(customer);
+    setIsCustomerDetailOpen(true);
   };
 
-  // Status Badge Component
-  const renderStatusBadge = (logId: string, currentStatus: TaskStatus) => {
-    const config = {
-      completed: { label: t('completed'), bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle2 },
-      in_progress: { label: t('inProgress'), bg: 'bg-blue-50 text-blue-700 border-blue-200', icon: PlayCircle },
-      blocked: { label: t('blocked'), bg: 'bg-rose-50 text-rose-700 border-rose-200', icon: AlertOctagon },
-      planned: { label: t('planned'), bg: 'bg-slate-100 text-slate-700 border-slate-200', icon: HelpCircle },
-    };
-
-    const cur = config[currentStatus] || config.completed;
-
-    return (
-      <div className="relative group">
-        <select
-          value={currentStatus}
-          onChange={(e) => onUpdateStatus(logId, e.target.value as TaskStatus)}
-          className={`appearance-none text-xs font-semibold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer focus:outline-none transition-all pr-6 ${cur.bg}`}
-        >
-          <option value="completed" className="bg-white text-emerald-700 font-semibold">{t('completed')}</option>
-          <option value="in_progress" className="bg-white text-blue-700 font-semibold">{t('inProgress')}</option>
-          <option value="blocked" className="bg-white text-rose-700 font-semibold">{t('blocked')}</option>
-          <option value="planned" className="bg-white text-slate-700 font-semibold">{t('planned')}</option>
-        </select>
-        <ChevronDown className="w-3 h-3 absolute right-1.5 top-2 pointer-events-none opacity-60 text-current" />
-      </div>
-    );
-  };
-
+  const getCustomer = (id: string) => customers.find((c) => c.id === id);
 
   // Filter logs logic
-  const filteredLogs = logs.filter((log) => {
-    // Search query
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      const matchTitle = log.title.toLowerCase().includes(q);
-      const matchNotes = log.notes.toLowerCase().includes(q);
-      const matchTags = log.tags.some((t) => t.toLowerCase().includes(q));
-      if (!matchTitle && !matchNotes && !matchTags) return false;
+  const filteredLogs = filterLogs(logs, filters, customers);
+
+  // Sort logs by date newest first
+  const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
+
+  const formatDateLabel = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  const hasActiveFilters = 
+    filters.search || 
+    filters.customerId || 
+    filters.datePreset !== 'all' || 
+    filters.startDate || 
+    filters.endDate;
+
+  const getFiltersSummary = () => {
+    const active = [];
+    if (filters.search) active.push(`"${filters.search}"`);
+    if (filters.datePreset !== 'all') active.push(t(PRESET_KEYS[filters.datePreset]));
+    if (filters.customerId) {
+      const c = getCustomer(filters.customerId);
+      if (c) active.push(c.name);
     }
-
-    // Category
-    if (filters.category && log.category !== filters.category) return false;
-
-    // Project
-    if (filters.projectId && log.projectId !== filters.projectId) return false;
-
-    // Customer
-    if (filters.customerId && log.customerId !== filters.customerId) return false;
-
-    // Status
-    if (filters.status && log.status !== filters.status) return false;
-
-    // Priority
-    if (filters.priority && log.priority !== filters.priority) return false;
-
-    // Date Presets
-    const todayStr = new Date().toISOString().split('T')[0];
-    const logDate = new Date(log.date);
-
-    if (filters.datePreset === 'today' && log.date !== todayStr) return false;
+    if (filters.startDate || filters.endDate) active.push(t('dateRange'));
     
-    if (filters.datePreset === 'yesterday') {
-      const y = new Date();
-      y.setDate(y.getDate() - 1);
-      const yStr = y.toISOString().split('T')[0];
-      if (log.date !== yStr) return false;
-    }
-
-    if (filters.datePreset === 'this_week') {
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - dayOfWeek);
-      startOfWeek.setHours(0, 0, 0, 0);
-      if (logDate < startOfWeek) return false;
-    }
-
-    if (filters.datePreset === 'last_week') {
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const startOfThisWeek = new Date(now);
-      startOfThisWeek.setDate(now.getDate() - dayOfWeek);
-      startOfThisWeek.setHours(0, 0, 0, 0);
-
-      const startOfLastWeek = new Date(startOfThisWeek);
-      startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
-
-      if (logDate < startOfLastWeek || logDate >= startOfThisWeek) return false;
-    }
-
-    if (filters.startDate && log.date < filters.startDate) return false;
-    if (filters.endDate && log.date > filters.endDate) return false;
-
-    return true;
-  });
-
-  // Group filtered logs by date
-  const groupedLogs: Record<string, WorkLog[]> = {};
-  filteredLogs.forEach((log) => {
-    if (!groupedLogs[log.date]) {
-      groupedLogs[log.date] = [];
-    }
-    groupedLogs[log.date].push(log);
-  });
-
-  // Sort dates descending
-  const sortedDates = Object.keys(groupedLogs).sort((a, b) => b.localeCompare(a));
-
-  // Calculated Metrics
-  const totalMinutes = filteredLogs.reduce((acc, curr) => acc + curr.durationMinutes, 0);
-  const totalHours = (totalMinutes / 60).toFixed(1);
-  const completedCount = filteredLogs.filter((l) => l.status === 'completed').length;
-  const blockedCount = filteredLogs.filter((l) => l.status === 'blocked').length;
+    return active.length > 0 
+      ? `${t('filter')}: ${active.join(', ')}` 
+      : t('allLogs');
+  };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 text-slate-800">
       {/* Search & Filter Bar */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Search Bar */}
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder={t('searchPlaceholder')}
-              value={filters.search}
-              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-            />
-            {filters.search && (
-              <button
-                onClick={() => setFilters((prev) => ({ ...prev, search: '' }))}
-                className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-700 font-medium"
-              >
-                {t('clearFilters')}
-              </button>
-            )}
-          </div>
-
-          {/* Quick Date Presets */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs overflow-x-auto no-scrollbar shrink-0">
-            {(['all', 'today', 'yesterday', 'this_week', 'last_week'] as const).map((preset) => (
-              <button
-                key={preset}
-                onClick={() => setFilters((prev) => ({ ...prev, datePreset: preset }))}
-                className={`px-3 py-1.5 rounded-lg font-medium capitalize transition-all whitespace-nowrap ${
-                  filters.datePreset === preset
-                    ? 'bg-white text-blue-700 font-semibold shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {preset.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Dropdown Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs pt-2 border-t border-slate-100">
-          <div>
-            <select
-              value={filters.category}
-              onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
-            >
-              <option value="">{t('allCategories')}</option>
-              <option value="Frontend">Frontend</option>
-              <option value="Backend">Backend</option>
-              <option value="Database">Database</option>
-              <option value="Design/UI">Design/UI</option>
-              <option value="Bug Fix">Bug Fix</option>
-              <option value="Code Review">Code Review</option>
-              <option value="Meeting/Sync">Meeting/Sync</option>
-              <option value="DevOps/CI-CD">DevOps/CI-CD</option>
-              <option value="Documentation">Documentation</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
-            >
-              <option value="">{t('allStatuses')}</option>
-              <option value="completed">{t('completed')}</option>
-              <option value="in_progress">{t('inProgress')}</option>
-              <option value="blocked">{t('blocked')}</option>
-              <option value="planned">{t('planned')}</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={filters.customerId || ''}
-              onChange={(e) => setFilters((prev) => ({ ...prev, customerId: e.target.value }))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
-            >
-              <option value="">{t('allCustomers')}</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.company} ({c.name})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-span-2 sm:col-span-4 lg:col-span-1 flex items-center justify-end">
-            {(filters.search || filters.category || filters.projectId || filters.status || filters.priority || filters.datePreset !== 'all') && (
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-4">
+        {/* Compact Toggle Row */}
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-blue-600 transition-colors py-1 px-2 rounded-lg hover:bg-slate-50"
+          >
+            <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+            <span>{getFiltersSummary()}</span>
+            {isFiltersOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
               <button
                 onClick={() =>
                   setFilters({
@@ -287,274 +158,360 @@ export const DailyLogView: React.FC<DailyLogViewProps> = ({
                     datePreset: 'all',
                     startDate: '',
                     endDate: '',
-                    category: '',
-                    projectId: '',
-                    status: '',
-                    priority: '',
-                    tag: '',
+                    customerId: '',
                   })
                 }
-                className="text-xs text-rose-600 hover:text-rose-700 font-semibold underline"
+                className="text-xs text-rose-600 hover:text-rose-700 font-semibold transition-colors mr-2"
               >
                 {t('clearFilters')}
               </button>
             )}
+            {!isFiltersOpen && (
+              <button
+                onClick={onExport}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition-all active:scale-95 shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>{t('exportData')}</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Collapsible Panel */}
+        {isFiltersOpen && (
+          <div className="pt-3 border-t border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={t('searchPlaceholder')}
+                  value={filters.search}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-250 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                />
+              </div>
+
+              {/* Quick Date Presets */}
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-250 text-xs overflow-x-auto no-scrollbar shrink-0">
+                {(['all', 'today', 'yesterday', 'this_week', 'last_week'] as const).map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setFilters((prev) => ({ ...prev, datePreset: preset, startDate: '', endDate: '' }))}
+                    className={`px-3 py-2 rounded-lg font-semibold capitalize transition-all whitespace-nowrap ${
+                      filters.datePreset === preset
+                        ? 'bg-white text-blue-600 shadow-xs'
+                        : 'text-slate-650 hover:text-slate-900'
+                    }`}
+                  >
+                    {t(PRESET_KEYS[preset])}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dropdown Filters & Export */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs pt-2">
+              <div>
+                <select
+                  value={filters.customerId || ''}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, customerId: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-250 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 font-semibold transition-all"
+                >
+                  <option value="">{t('allCustomers')}</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase tracking-wider">{t('dateFrom')}</label>
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  max={filters.endDate || undefined}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value, datePreset: 'all' }))}
+                  className="w-full bg-slate-50 border border-slate-250 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 font-semibold transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase tracking-wider">{t('dateTo')}</label>
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  min={filters.startDate || undefined}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value, datePreset: 'all' }))}
+                  className="w-full bg-slate-50 border border-slate-250 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 font-semibold transition-all"
+                />
+              </div>
+
+              <div className="lg:col-span-2 flex items-center justify-end gap-3 mt-4 sm:mt-0">
+                <button
+                  onClick={onExport}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-255 text-slate-705 text-xs font-bold transition-all active:scale-95 shadow-2xs"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span>{t('exportData')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Summary line */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-slate-500 font-semibold">
+          {t('entriesLogged').replace('{count}', String(filteredLogs.length))}
+        </p>
+      </div>
 
-      {/* Main Table / Cards List */}
-      {sortedDates.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center space-y-3 shadow-2xs">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+      {/* Logs View: Mobile Cards + Desktop Table */}
+      {sortedLogs.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-3xl p-10 sm:p-16 text-center space-y-4 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto shadow-inner">
             <Search className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-slate-900">{t('noLogsFound')}</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <h3 className="text-base font-bold text-slate-800">{t('noLogsFound')}</h3>
+          <p className="text-xs text-slate-555 max-w-sm mx-auto leading-relaxed">
             {t('noLogsSubtitle')}
           </p>
           <button
             onClick={onOpenNewLog}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all mt-2"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-blue-500/10 transition-all mt-2 active:scale-95"
           >
             <span>+ {t('logTask')}</span>
           </button>
         </div>
       ) : (
         <>
-          {/* Mobile Card View (Visible on small screens < md) */}
-          <div className="space-y-3 md:hidden">
-            {filteredLogs.map((log) => {
-              const customer = customers.find((c) => c.id === log.customerId);
-
-              return (
-                <div key={`mobile-${log.id}`} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-3">
-                  {/* Card Header: Title & Duration */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-slate-900 text-sm leading-snug">{log.title}</h4>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                        <span className="flex items-center gap-1 font-medium">
-                          <Calendar className="w-3 h-3 text-slate-400" />
-                          {log.date}
-                        </span>
-                        <span>•</span>
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold border border-slate-200">
-                          {log.category}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg text-xs font-mono font-bold text-slate-800 border border-slate-200/80">
-                        <Clock className="w-3 h-3 text-blue-600" />
-                        <span>{formatDuration(log.durationMinutes)}</span>
-                      </div>
-                      {renderStatusBadge(log.id, log.status)}
-                    </div>
-                  </div>
-
-                  {/* Customer Badge & Notes */}
-                  {customer && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1">
-                        <Building2 className="w-3 h-3 text-amber-600 shrink-0" />
-                        <span>{customer.company}</span>
-                      </span>
-                    </div>
-                  )}
-
-                  {log.notes && (
-                    <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed">
-                      {log.notes}
-                    </p>
-                  )}
-
-                  {/* Tags & External Link */}
-                  {(log.tags.length > 0 || log.outcomeLink) && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                      {log.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full font-semibold"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                      {log.outcomeLink && (
-                        <a
-                          href={log.outcomeLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          <span>Link</span>
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Footer Actions */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end space-x-1">
-                    <button
-                      onClick={() => onEditLog(log)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-all"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{t('edit')}</span>
-                    </button>
-                    <button
-                      onClick={() => onDuplicateLog(log)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-all"
-                    >
-                      <Copy className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{t('duplicate')}</span>
-                    </button>
-                    <button
-                      onClick={() => onDeleteLog(log.id)}
-                      className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all text-xs"
-                      title={t('delete')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+          {/* Mobile view (< md): Card list */}
+          <div className="space-y-4 md:hidden">
+            {sortedLogs.map((log) => (
+              <div 
+                key={`mob-log-${log.id}`} 
+                className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm space-y-3 transition-all group duration-300 hover:shadow-md"
+              >
+                {/* Date & Action row */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
+                    <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{formatDateLabel(log.date)}</span>
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Title */}
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-slate-950 transition-colors">
+                    {log.title}
+                  </h4>
+                </div>
+
+                {/* Customers list */}
+                {log.targets.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {log.targets.map((target) => {
+                      const c = getCustomer(target.customerId);
+                      return (
+                        <button
+                          key={target.id}
+                          onClick={() => c && handleCustomerClick(c)}
+                          disabled={!c}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md border text-[10px] font-semibold transition-all ${
+                            c ? 'hover:scale-[1.03] cursor-pointer' : 'cursor-default'
+                          } ${STATUS_STYLES[target.status] || STATUS_STYLES.meet}`}
+                        >
+                          <Users className="w-3 h-3 shrink-0" />
+                          {c ? c.name : t('unknownCustomer')}
+                          <span className="opacity-70">· {t(STATUS_KEYS[target.status])}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Description */}
+                {log.desc && (
+                  <p className="text-xs text-slate-650 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed max-w-full whitespace-pre-line">
+                    {log.desc}
+                  </p>
+                )}
+
+                {/* Card Actions */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                  <button
+                    onClick={() => handleViewLogDetail(log)}
+                    className="flex items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-650 hover:text-slate-800 border border-slate-200 transition-all text-xs"
+                    title={t('viewDetails')}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onEditLog(log)}
+                    className="flex items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-650 hover:text-slate-800 border border-slate-200 transition-all text-xs"
+                    title={t('edit')}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleCopyLog(log)}
+                    className="flex items-center justify-center p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-650 hover:text-slate-805 border border-slate-200 transition-all text-xs"
+                    title={t('copyToClipboard')}
+                  >
+                    {copiedId === log.id ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                    ) : (
+                      <ClipboardCopy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => onDeleteLog(log.id)}
+                    className="flex items-center justify-center p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 hover:border-transparent transition-all text-xs"
+                    title={t('delete')}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Desktop Table View (Visible on screens >= md) */}
-          <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-4">{t('date')}</th>
-                    <th className="py-3 px-4">{t('taskActivity')}</th>
-                    <th className="py-3 px-4">{t('customer')}</th>
-                    <th className="py-3 px-4">{t('category')}</th>
-                    <th className="py-3 px-4 text-right">{t('duration')}</th>
-                    <th className="py-3 px-4">{t('status')}</th>
-                    <th className="py-3 px-4 text-center">{t('actions')}</th>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3.5 px-4 w-32">{t('date')}</th>
+                    <th className="py-3.5 px-4">{t('taskActivity')}</th>
+                    <th className="py-3.5 px-4">{t('customer')}</th>
+                    <th className="py-3.5 px-4 text-center w-40">{t('actions')}</th>
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-slate-100">
-                  {filteredLogs.map((log) => {
-                    const customer = customers.find((c) => c.id === log.customerId);
+                  {sortedLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                      {/* Date */}
+                      <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded px-2.5 py-1 w-max">
+                          <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>{formatDateLabel(log.date)}</span>
+                        </div>
+                      </td>
 
-                    return (
-                      <tr key={log.id} className="hover:bg-slate-50/80 transition-colors group">
-                        {/* Date */}
-                        <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap align-top">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>{log.date}</span>
-                          </div>
-                        </td>
-
-                        {/* Task / Summary */}
-                        <td className="py-3.5 px-4 text-slate-900 font-medium align-top max-w-md">
-                          <div className="space-y-1">
-                            <p className="font-bold text-slate-900 leading-snug">{log.title}</p>
-                            {log.notes && (
-                              <p className="text-slate-500 text-[11px] line-clamp-2 leading-relaxed">
-                                {log.notes}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                              {log.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.2 rounded-full font-semibold"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                              {log.outcomeLink && (
-                                <a
-                                  href={log.outcomeLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-0.5 text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold"
-                                >
-                                  <ExternalLink className="w-3 h-3" />
-                                  <span>Link</span>
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Customer */}
-                        <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                          {customer ? (
-                            <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[11px] font-semibold flex items-center gap-1 w-fit">
-                              <Building2 className="w-3 h-3 text-amber-600 shrink-0" />
-                              <span className="truncate max-w-[120px]">{customer.company}</span>
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 italic text-[11px]">—</span>
+                      {/* Task / Activity */}
+                      <td className="py-3.5 px-4 align-middle max-w-md">
+                        <div className="space-y-1">
+                          <p className="font-bold text-slate-800 group-hover:text-slate-950 transition-colors leading-snug">
+                            {log.title}
+                          </p>
+                          {log.desc && (
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed whitespace-pre-line">
+                              {log.desc}
+                            </p>
                           )}
-                        </td>
+                        </div>
+                      </td>
 
-                        {/* Category */}
-                        <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-slate-200">
-                            {log.category}
-                          </span>
-                        </td>
-
-                        {/* Duration */}
-                        <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 whitespace-nowrap align-top">
-                          <div className="flex items-center justify-end gap-1">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span>{formatDuration(log.durationMinutes)}</span>
+                      {/* Customers */}
+                      <td className="py-3.5 px-4 align-middle">
+                        {log.targets.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {log.targets.map((target) => {
+                              const c = getCustomer(target.customerId);
+                              return (
+                                <button
+                                  key={target.id}
+                                  onClick={() => c && handleCustomerClick(c)}
+                                  disabled={!c}
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md border text-[10px] font-semibold transition-all ${
+                                    c ? 'hover:scale-[1.03] cursor-pointer' : 'cursor-default'
+                                  } ${STATUS_STYLES[target.status] || STATUS_STYLES.meet}`}
+                                >
+                                  <Users className="w-3 h-3 shrink-0" />
+                                  <span>{c ? c.name : t('unknownCustomer')}</span>
+                                  <span className="opacity-70">({t(STATUS_KEYS[target.status])})</span>
+                                </button>
+                              );
+                            })}
                           </div>
-                        </td>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">—</span>
+                        )}
+                      </td>
 
-                        {/* Status */}
-                        <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                          {renderStatusBadge(log.id, log.status)}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap align-top">
-                          <div className="flex items-center justify-center space-x-1">
-                            <button
-                              onClick={() => onEditLog(log)}
-                              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all"
-                              title="Edit Entry"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => onDuplicateLog(log)}
-                              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all"
-                              title="Duplicate Entry"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => onDeleteLog(log.id)}
-                              className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-all"
-                              title="Delete Entry"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-center align-middle whitespace-nowrap">
+                        <div className="flex items-center justify-center space-x-1">
+                          <button
+                            onClick={() => handleViewLogDetail(log)}
+                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all"
+                            title={t('viewDetails')}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onEditLog(log)}
+                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all"
+                            title={t('edit')}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleCopyLog(log)}
+                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all"
+                            title={t('copyToClipboard')}
+                          >
+                            {copiedId === log.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <ClipboardCopy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => onDeleteLog(log.id)}
+                            className="p-2 rounded-lg hover:bg-rose-55 text-slate-450 hover:text-rose-600 transition-all"
+                            title={t('delete')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
         </>
       )}
+      
+      <LogDetailModal
+        isOpen={isLogDetailOpen}
+        onClose={() => {
+          setIsLogDetailOpen(false);
+          setSelectedLog(null);
+        }}
+        log={selectedLog}
+        customers={customers}
+        onCustomerClick={handleCustomerClick}
+      />
+
+      <CustomerDetailModal
+        isOpen={isCustomerDetailOpen}
+        onClose={() => {
+          setIsCustomerDetailOpen(false);
+          setSelectedCustomer(null);
+        }}
+        customer={selectedCustomer}
+        logs={logs}
+      />
     </div>
   );
 };

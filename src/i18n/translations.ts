@@ -35,6 +35,11 @@ export const translations = {
     allCustomers: 'អតិថិជនទាំងអស់',
     allCategories: 'ប្រភេទទាំងអស់',
     clearFilters: 'លុបតម្រង',
+    dateRange: 'ចន្លោះកាលបរិច្ឆេទ',
+    filter: 'តម្រង',
+    allLogs: 'កំណត់ត្រាទាំងអស់',
+    generateSummary: 'បង្កើតការសង្ខេប',
+    generatedSummary: 'ការសង្ខេបដែលបានបង្កើត',
     
     // Table Headers
     date: 'កាលបរិច្ឆេទ',
@@ -146,6 +151,8 @@ export const translations = {
     exportBackupTitle: 'ទាញយក និងបម្រុងទុកទិន្នន័យ',
     exportBackupSubtitle: 'រក្សាទុក ឬនាំចូលទិន្នន័យកំណត់ត្រាការងារ',
     exportData: 'ទាញយកទិន្នន័យការងារ',
+    exportFiltered: 'តាមតម្រង (បច្ចុប្បន្ន)',
+    exportAll: 'ទាំងអស់',
     exportCSV: 'ទាញយកជា CSV Spreadsheet',
     exportJSON: 'ទាញយកជា JSON Backup',
     exportJson: 'ទាញយកជា JSON',
@@ -163,6 +170,76 @@ export const translations = {
     delete: 'លុប',
     confirmDelete: 'តើអ្នកពិតជាចង់លុបធាតុនេះមែនទេ?',
     confirmDeleteCustomer: 'តើអ្នកពិតជាចង់លុបអតិថិជននេះមែនទេ?',
+
+    // Target Status (Meet / Sell / Interesting / Not Meet)
+    meet: 'ជួបអតិថិជន',
+    sell: 'លក់',
+    interesting: 'អតិថិជនចាប់អារម្មណ៍',
+    notMeet: 'មិនបានជួបអតិថិជន',
+
+    // Date Presets
+    all: 'ទាំងអស់',
+    yesterday: 'ម្សិលមិញ',
+    thisWeek: 'សប្ដាហ៍នេះ',
+    lastWeek: 'សប្ដាហ៍មុន',
+    dateFrom: 'ចាប់ពីកាលបរិច្ឆេទ',
+    dateTo: 'ដល់កាលបរិច្ឆេទ',
+
+    // Work Log Target Editor
+    targetCustomers: 'អតិថិជនគោលដៅ',
+    exportedOn: 'បាននាំចេញនៅ',
+    colTitle: 'ចំណងជើង',
+    colDescription: 'ការពិពណ៌នា',
+    print: 'ព្រីន',
+    add: 'បន្ថែម',
+    noTargetsMessage: 'មិនទាន់មានអតិថិជនគោលដៅទេ។ សូមបន្ថែមអតិថិជនដែលភ្ជាប់ជាមួយកំណត់ត្រានេះ។',
+    targetNotePlaceholder: 'កំណត់ចំណាំអំពីការជួបអតិថិជននេះ...',
+    removeTarget: 'លុបអតិថិជនគោលដៅ',
+    taskTitleRequired: 'សូមបញ្ចូលចំណងជើងភារកិច្ច។',
+    entriesLogged: 'កំណត់ត្រាចំនួន {count} បានកត់ត្រា',
+    unknownCustomer: 'មិនស្គាល់',
+    editEntry: 'កែប្រែកំណត់ត្រា',
+    duplicateEntry: 'ចម្លងកំណត់ត្រា',
+    deleteEntry: 'លុបកំណត់ត្រា',
+
+    // Customer Photo & Address
+    photo: 'រូបថត',
+    changePhoto: 'ផ្លាស់ប្ដូររូបថត',
+    removePhoto: 'លុបរូបថត',
+    uploading: 'កំពុងបង្ហោះ...',
+    uploadPhoto: 'បង្ហោះរូបថត',
+    address: 'អាសយដ្ឋាន',
+    addressPlaceholder: 'ផ្លូវ, ទីក្រុង, ប្រទេស...',
+    customerLabel: 'អតិថិជន',
+    chooseImageError: 'សូមជ្រើសរើសឯកសាររូបភាព។',
+    imageTooLarge: 'រូបភាពត្រូវមានទំហំ 5 MB ឬតូចជាងនេះ។',
+    uploadFailed: 'បរាជ័យក្នុងការបង្ហោះរូបថត។',
+    fillCustomerName: 'សូមបំពេញឈ្មោះអតិថិជន។',
+
+    // Customer Manager
+    viewHistory: 'មើលប្រវត្តិ',
+    workLogs: 'កំណត់ត្រាការងារ',
+    entries: 'កំណត់ត្រា',
+    confirmDeleteNamed: 'តើអ្នកពិតជាចង់លុប {name} មែនទេ?',
+    viewWorkHistory: 'មើលប្រវត្តិការងារ',
+    workHistory: 'ប្រវត្តិការងារ',
+    noPhone: 'គ្មានលេខទូរស័ព្ទ',
+    noLinkedWorkLogs: 'មិនទាន់មានកំណត់ត្រាការងារភ្ជាប់ជាមួយ {name} ទេ។',
+    addTargetHint: 'អ្នកអាចបន្ថែមអតិថិជនគោលដៅពេលបង្កើត ឬកែប្រែកំណត់ត្រាការងារប្រចាំថ្ងៃ។',
+    closeHistory: 'បិទប្រវត្តិ',
+
+    // Detail Modals
+    logDetails: 'ព័ត៌មានកំណត់ត្រា',
+    customerDetails: 'ព័ត៌មានអតិថិជន',
+    viewDetails: 'មើលព័ត៌មាន',
+
+    // Export / Import
+    exportMarkdown: 'ទាញយកជា Markdown Journal (.md)',
+    exportExcel: 'ទាញយកជា Excel (.xlsx)',
+    exportPDF: 'ទាញយកជា PDF',
+    importSuccess: 'បានស្ដារកំណត់ត្រាចំនួន {count} ដោយជោគជ័យ!',
+    invalidFormat: 'ទម្រង់ឯកសារមិនត្រឹមត្រូវ។ រំពឹងថាជា JSON array នៃកំណត់ត្រាការងារ។',
+    parseFailed: 'បរាជ័យក្នុងការអានឯកសារ JSON backup។',
   },
   en: {
     // Brand & App
@@ -198,6 +275,11 @@ export const translations = {
     allCustomers: 'All Customers',
     allCategories: 'All Categories',
     clearFilters: 'Clear Filters',
+    dateRange: 'Date Range',
+    filter: 'Filters',
+    allLogs: 'All Logs',
+    generateSummary: 'Generate Summary',
+    generatedSummary: 'Generated Summary',
     
     // Table Headers
     date: 'Date',
@@ -309,6 +391,8 @@ export const translations = {
     exportBackupTitle: 'Backup & Export Data',
     exportBackupSubtitle: 'Download or restore your work log entries',
     exportData: 'Export Work Data',
+    exportFiltered: 'Filtered (shown)',
+    exportAll: 'All',
     exportCSV: 'Export to CSV Spreadsheet',
     exportJSON: 'Export JSON Backup',
     exportJson: 'Export JSON',
@@ -326,5 +410,75 @@ export const translations = {
     delete: 'Delete',
     confirmDelete: 'Are you sure you want to delete this log entry?',
     confirmDeleteCustomer: 'Are you sure you want to delete this customer?',
+
+    // Target Status (Meet / Sell / Interesting / Not Meet)
+    meet: 'Meet',
+    sell: 'Sell',
+    interesting: 'Interesting',
+    notMeet: 'Not Meet',
+
+    // Date Presets
+    all: 'All',
+    yesterday: 'Yesterday',
+    thisWeek: 'This Week',
+    lastWeek: 'Last Week',
+    dateFrom: 'Date From',
+    dateTo: 'Date To',
+
+    // Work Log Target Editor
+    targetCustomers: 'Target Customers',
+    exportedOn: 'Exported on',
+    colTitle: 'Title',
+    colDescription: 'Description',
+    print: 'Print',
+    add: 'Add',
+    noTargetsMessage: 'No target customers. Add one or more customers linked to this work log.',
+    targetNotePlaceholder: 'Note about this customer visit...',
+    removeTarget: 'Remove target',
+    taskTitleRequired: 'Please enter a task title.',
+    entriesLogged: '{count} entries logged',
+    unknownCustomer: 'Unknown',
+    editEntry: 'Edit Entry',
+    duplicateEntry: 'Duplicate Entry',
+    deleteEntry: 'Delete Entry',
+
+    // Customer Photo & Address
+    photo: 'Photo',
+    changePhoto: 'Change Photo',
+    removePhoto: 'Remove Photo',
+    uploading: 'Uploading...',
+    uploadPhoto: 'Upload Photo',
+    address: 'Address',
+    addressPlaceholder: 'Street, City, Country...',
+    customerLabel: 'Customer',
+    chooseImageError: 'Please choose an image file.',
+    imageTooLarge: 'Image must be 5 MB or smaller.',
+    uploadFailed: 'Failed to upload photo.',
+    fillCustomerName: 'Please fill in the Customer Name.',
+
+    // Customer Manager
+    viewHistory: 'View History',
+    workLogs: 'Work Logs',
+    entries: 'Entries',
+    confirmDeleteNamed: 'Are you sure you want to delete {name}?',
+    viewWorkHistory: 'View Work History',
+    workHistory: 'Work History',
+    noPhone: 'No phone',
+    noLinkedWorkLogs: 'No work logs currently linked to {name}.',
+    addTargetHint: 'You can add target customers when creating or editing a Daily Work Log.',
+    closeHistory: 'Close History',
+
+    // Detail Modals
+    logDetails: 'Log Details',
+    customerDetails: 'Customer Details',
+    viewDetails: 'View Details',
+
+    // Export / Import
+    exportMarkdown: 'Export Markdown Journal (.md)',
+    exportExcel: 'Export Excel (.xlsx)',
+    exportPDF: 'Export PDF',
+    importSuccess: 'Successfully restored {count} log entries!',
+    invalidFormat: 'Invalid file format. Expected a JSON array of work logs.',
+    parseFailed: 'Failed to parse JSON backup file.',
   },
 };

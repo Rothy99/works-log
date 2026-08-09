@@ -23,13 +23,11 @@ export const StandupGeneratorModal: React.FC<StandupGeneratorModalProps> = ({
 
   if (!isOpen) return null;
 
-
   const handleGenerateStandup = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Filter recent logs (last 3 days)
       const res = await fetch('/api/ai/standup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,7 +55,6 @@ export const StandupGeneratorModal: React.FC<StandupGeneratorModalProps> = ({
     }
   };
 
-  // Convert report object to formatted text block for copy
   const getFormattedExportText = () => {
     if (!report) return '';
 
@@ -116,43 +113,43 @@ ${report.keyHighlights.map((i) => `- ${i}`).join('\n')}`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[92dvh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/20 backdrop-blur-xs">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[92dvh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden text-slate-800 animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-800 bg-slate-900/90 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400">
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-650 border border-indigo-100 shadow-2xs">
               <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white">{t('aiStandupTitle')}</h2>
-              <p className="text-[11px] sm:text-xs text-slate-400">{t('standupSubtitle')}</p>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900">{t('aiStandupTitle')}</h2>
+              <p className="text-[11px] sm:text-xs text-slate-500">{t('standupSubtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-white">
           {!report && !isLoading && (
             <div className="text-center py-8 space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600 shadow-2xs">
                 <Sparkles className="w-8 h-8" />
               </div>
               <div className="max-w-md mx-auto">
-                <h3 className="text-base font-semibold text-white">{t('generateStandup')}</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <h3 className="text-sm font-bold text-slate-800">{t('generateStandup')}</h3>
+                <p className="text-xs text-slate-500 mt-1">
                   Gemini AI will analyze your {logs.length} logged tasks and format them into clear bullet points for Slack, Teams, or Jira syncs.
                 </p>
               </div>
 
               <button
                 onClick={handleGenerateStandup}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition-all"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-md shadow-indigo-650/10 transition-all active:scale-95"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>{t('generateStandup')}</span>
@@ -162,16 +159,15 @@ ${report.keyHighlights.map((i) => `- ${i}`).join('\n')}`;
 
           {isLoading && (
             <div className="text-center py-12 space-y-3">
-              <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin mx-auto" />
-              <p className="text-sm font-semibold text-white">{t('generating')}</p>
-              <p className="text-xs text-slate-400">{t('standupSubtitle')}</p>
+              <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mx-auto" />
+              <p className="text-xs font-bold text-slate-800">{t('generating')}</p>
+              <p className="text-xs text-slate-500">{t('standupSubtitle')}</p>
             </div>
           )}
 
-
           {error && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -179,68 +175,113 @@ ${report.keyHighlights.map((i) => `- ${i}`).join('\n')}`;
           {report && !isLoading && (
             <div className="space-y-4">
               {/* Output Format Switcher */}
-              <div className="flex items-center justify-between bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <div className="flex items-center justify-between bg-slate-50 p-1.5 rounded-xl border border-slate-200">
                 <div className="flex items-center space-x-1 text-xs">
-                  <span className="text-slate-400 font-medium px-2">Export Format:</span>
+                  <span className="text-slate-500 font-medium px-2">Export Format:</span>
                   <button
                     onClick={() => setFormatMode('slack')}
-                    className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                      formatMode === 'slack' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      formatMode === 'slack' ? 'bg-white text-indigo-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Slack Markdown
                   </button>
                   <button
                     onClick={() => setFormatMode('jira')}
-                    className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                      formatMode === 'jira' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      formatMode === 'jira' ? 'bg-white text-indigo-600 shadow-2xs' : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Jira Markup
                   </button>
-                  <button
-                    onClick={() => setFormatMode('plain')}
-                    className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                      formatMode === 'plain' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Plain Text
-                  </button>
                 </div>
+              </div>
 
+              {/* Render Output Content */}
+              <div className="relative bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 text-xs text-slate-800">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow transition-all"
+                  className="absolute top-3 right-3 p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-800 transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'Copied!' : 'Copy Report'}</span>
-                </button>
-              </div>
-
-              {/* Preview Box */}
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-200 whitespace-pre-wrap max-h-80 overflow-y-auto leading-relaxed border-l-4 border-l-indigo-500">
-                {getFormattedExportText()}
-              </div>
-
-              {/* Regenerate Button */}
-              <div className="flex justify-between items-center pt-2">
-                <button
-                  onClick={handleGenerateStandup}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Regenerate Report</span>
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-[10px] text-emerald-600 font-bold">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-bold">Copy</span>
+                    </>
+                  )}
                 </button>
 
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg"
-                >
-                  Done
-                </button>
+                <div className="space-y-4 pr-10">
+                  <div>
+                    <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                      Yesterday Summary
+                    </h4>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {report.yesterdaySummary.map((item, idx) => (
+                        <li key={idx} className="leading-relaxed">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                      Today Plan
+                    </h4>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {report.todayPlan.map((item, idx) => (
+                        <li key={idx} className="leading-relaxed">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {report.blockers.length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
+                        Blockers
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1">
+                        {report.blockers.map((item, idx) => (
+                          <li key={idx} className="leading-relaxed text-rose-700 font-medium">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {report.keyHighlights.length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                        Highlights
+                      </h4>
+                      <ul className="list-disc pl-4 space-y-1">
+                        {report.keyHighlights.map((item, idx) => (
+                          <li key={idx} className="leading-relaxed">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 sm:px-6 py-4 border-t border-slate-200 flex justify-end bg-white shrink-0">
+          <button
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition-all active:scale-95"
+          >
+            {t('cancel')}
+          </button>
         </div>
       </div>
     </div>
