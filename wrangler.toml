@@ -11,8 +11,8 @@ directory = "./dist"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "works-log-db"
-database_id = "INSERT_YOUR_DATABASE_ID_HERE"
+database_name = "daily-work-manager"
+database_id = "78a941df-9bb6-46be-b7f2-66ee7bd938fb"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
